@@ -1,0 +1,1 @@
+# ya_maps_polygon_module
