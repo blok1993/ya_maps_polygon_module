@@ -149,16 +149,19 @@ function init() {
                     map.geoObjects.remove(this.regions);
                 }
 
+                //Создание градиента для легенды
+                jQuery('.legend-gradient').css('background', 'linear-gradient(to bottom, rgba(100, 0, 100, 1), rgba(255, 150, 100, 1))');
+
                 //Проверка принадлежности точки полигону
                 var t0 = performance.now();
 
                 var myPolygon = new ymaps.geometry.Polygon(res.features[0].geometry.coordinates);
                 var polygonCreationTime = performance.now() - t0;
-                console.log('Время создания полигона ' + polygonCreationTime.toFixed(2) + ' ms.');
+                console.log('Время создания полигона ' + polygonCreationTime.toFixed(2) + ' ms');
 
                 var contains = false;
-                var numberOfPoints = 10000;
-                var numberOfPolygons = 5;
+                var numberOfPoints = 1200;
+                var numberOfPolygons = res.features.length;
 
                 myPolygon.options.setParent(map.options);
                 myPolygon.setMap(map);
@@ -171,15 +174,17 @@ function init() {
 
                 var scriptTime = performance.now() - t0;
 
-                console.log('Время работы скрипта ' + scriptTime.toFixed(2) + ' ms.');
-
+                console.log('Кол-во полигонов ' + numberOfPolygons);
+                console.log('Кол-во точек ' + numberOfPoints);
+                console.log('Время работы скрипта ' + scriptTime.toFixed(2) + ' ms');
+                //*//
 
                 this.regions = new ymaps.ObjectManager();
                 this.regions
                     .add(res.features.map(function (feature, i) {
 
 
-                        feature.options = {fillColor: "rgba(" + (100 + i * 2) + ", 100, 100, 0.7)"};
+                        feature.options = {fillColor: "rgba(" + (100 + i * 2) + ", " + (i * 2) + ", 100, 0.8)"};
 
 
                         feature.id = feature.properties.iso3166;
