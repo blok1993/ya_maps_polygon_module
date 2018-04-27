@@ -90,6 +90,26 @@ var REGIONS_DATA = {
 
 ymaps.ready(init);
 
+// Метод трассировки луча.
+// Не работает надежно, когда точка является углом многоугольника или края.
+function notAccurateRayCast(point, vs) {
+    var x = point[0], y = point[1];
+
+    var inside = false;
+    for (var i = 0, j = vs.length - 1; i < vs.length; j = i++) {
+        var xi = vs[i][0], yi = vs[i][1];
+        var xj = vs[j][0], yj = vs[j][1];
+
+        var intersect = ((yi > y) != (yj > y))
+            && (x < (xj - xi) * (y - yi) / (yj - yi) + xi);
+        if (intersect) inside = !inside;
+    }
+
+    return inside;
+}
+
+var classifyPoint = require("robust-point-in-polygon");
+
 function init() {
     // Создадим собственный макет RegionControl.
     var RegionControlLayout = ymaps.templateLayoutFactory.createClass(optionsTemplate, {
@@ -166,11 +186,17 @@ function init() {
                 myPolygon.options.setParent(map.options);
                 myPolygon.setMap(map);
 
-                // Плохой алгоритм
+                // Данную часть можно улучшить по производительности примерно в 2 раза.
                 for (var i = 0; i < numberOfPolygons * numberOfPoints; i++) {
-                    contains = myPolygon.contains([53.347238, 83.765470]);
-                }
+                    // Алгоритм Яндекса (~1.5 sec, при 100 000 итерациях)
+                    //contains = myPolygon.contains([53.347238, 83.765470]);
 
+                    // Метод трассировки луча (без учета граничных случаев). (~200 ms, при 100 000 итерациях)
+                    //contains = notAccurateRayCast([53.347238, 83.765470], res.features[0].geometry.coordinates[0]);
+
+                    // Улучшенный, точный метод трассировки луча. (~270 ms, при 100 000 итерациях)
+                    contains = classifyPoint(res.features[0].geometry.coordinates[0], [53.347238, 83.765470]);
+                }
 
                 var scriptTime = performance.now() - t0;
 
