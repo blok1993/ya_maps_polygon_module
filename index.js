@@ -88,7 +88,17 @@ var REGIONS_DATA = {
         '</div>'
     ].join('');
 
-ymaps.ready(init);
+var hotels = [];
+
+$.ajax('data/hotels.json', {
+    success: function(data) {
+        hotels = data;
+
+        // Для демонстрации возьмем 2500 точек.
+        hotels.features.length /= 4;
+        ymaps.ready(init);
+    }
+});
 
 // Метод трассировки луча.
 // Не работает надежно, когда точка является углом многоугольника или края.
@@ -175,42 +185,86 @@ function init() {
                 //Проверка принадлежности точки полигону
                 var t0 = performance.now();
 
-                var myPolygon = new ymaps.geometry.Polygon(res.features[0].geometry.coordinates);
-                var polygonCreationTime = performance.now() - t0;
-                console.log('Время создания полигона ' + polygonCreationTime.toFixed(2) + ' ms');
-
                 var contains = false;
-                var numberOfPoints = 1200;
-                var numberOfPolygons = res.features.length;
+                var numberOfFeatures = res.features.length;
+                var numberOfHotels = hotels.features.length;
+                var numberOfAllPolygons = 0;
 
-                myPolygon.options.setParent(map.options);
-                myPolygon.setMap(map);
+                var hotelsInRussia = 0;
+                var iterationsCount = 0;
 
-                // Данную часть можно улучшить по производительности примерно в 2 раза.
-                for (var i = 0; i < numberOfPolygons * numberOfPoints; i++) {
-                    // Алгоритм Яндекса (~1.5 sec при 100 000 итерациях)
-                    //contains = myPolygon.contains([53.347238, 83.765470]);
+                for (var i = 0; i < numberOfFeatures; i++) {
 
-                    // Метод трассировки луча (без учета граничных случаев). (~200 ms при 100 000 итерациях)
-                    //contains = notAccurateRayCast([53.347238, 83.765470], res.features[0].geometry.coordinates[0]);
+                    res.features[i].properties["pointsNumber"] = 0;
 
-                    // Улучшенный, точный метод трассировки луча. (~270 ms при 100 000 итерациях) (~1 sec при 500 000 итерациях) (~2.2 sec при 1млн. итераций)
-                    contains = classifyPoint(res.features[0].geometry.coordinates[0], [53.347238, 83.765470]);
+                    for(var k = 0; k < res.features[i].geometry.coordinates.length; k++) {
+                        numberOfAllPolygons++;
+                        //var myPolygon = new ymaps.geometry.Polygon([res.features[i].geometry.coordinates[k]]);
+                        //myPolygon.options.setParent(map.options);
+                        //myPolygon.setMap(map);
+
+                        for (var j = 0; j < hotels.features.length; j++) {
+                            iterationsCount++;
+                            // Алгоритм Яндекса (~1.5 sec при 100 000 итерациях)
+                            // contains = myPolygon.contains(hotels.features[j].geometry.coordinates);
+
+                            // Метод трассировки луча (без учета граничных случаев). (~200 ms при 100 000 итерациях)
+                            //contains = notAccurateRayCast(hotels.features[j].geometry.coordinates, res.features[i].geometry.coordinates[k]);
+
+                            // Улучшенный, точный метод трассировки луча. (~270 ms при 100 000 итерациях) (~1 sec при 500 000 итерациях) (~2.2 sec при 1млн. итераций)
+                            contains = classifyPoint(res.features[i].geometry.coordinates[k], hotels.features[j].geometry.coordinates);
+
+                            if (contains !== 1) {
+                                res.features[i].properties["pointsNumber"]++;
+                                hotelsInRussia++;
+
+                                // Увеличиваем эффективность алгоритма.
+                                // Чем больше точек принадлежит текущей стране, тем выше эффективность данной строчки.
+                                hotels.features.splice(j--, 1);
+                            }
+                        }
+                    }
                 }
 
                 var scriptTime = performance.now() - t0;
 
-                console.log('Кол-во полигонов ' + numberOfPolygons);
-                console.log('Кол-во точек ' + numberOfPoints);
+                // Логирование значений
+                console.log('Кол-во итераций ' + iterationsCount);
+                console.log('Кол-во полигонов ' + numberOfAllPolygons);
+                console.log('Кол-во точек ' + numberOfHotels);
                 console.log('Время работы скрипта ' + scriptTime.toFixed(2) + ' ms');
-                //*//
+                console.log(' ');
+                console.log('Всего в границы России попало ' + hotelsInRussia + ' точек.');
+                console.log(' ');
+
+                var localMaximum = 0;
+                for (var i = 0; i < numberOfFeatures; i++) {
+                    var num = res.features[i].properties["pointsNumber"];
+
+                    if (localMaximum < num) {
+                        localMaximum = num;
+                    }
+
+                    if (res.features[i].properties["pointsNumber"] > 0) {
+                        console.log(res.features[i].properties.name + ' ' + num + ' отелей.');
+                    }
+                }
+
+                // Выбираем экстремум.
+                hotelsInRussia = localMaximum;
 
                 this.regions = new ymaps.ObjectManager();
                 this.regions
                     .add(res.features.map(function (feature, i) {
 
 
-                        feature.options = {fillColor: "rgba(" + (100 + i * 2) + ", " + (i * 2) + ", 100, 0.8)"};
+                        // Цветовые составляющие
+                        var R = 355 - (100 + Math.floor(155 * feature.properties["pointsNumber"] / hotelsInRussia));
+                        var G = 150 - Math.floor(150 * feature.properties["pointsNumber"] / hotelsInRussia);
+                        var B = 100;
+                        var alpha = feature.properties["pointsNumber"] ? 0.9 : 0.1;
+
+                        feature.options = {fillColor: "rgba(" + R + ", " + G + ", " + B + ", " + alpha + ")"};
 
 
                         feature.id = feature.properties.iso3166;

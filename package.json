@@ -7,8 +7,8 @@
   },
   "dependencies": {
     "babel-eslint": "^8.2.2",
-    "webpack": "^4.5.0",
-    "robust-point-in-polygon": "^1.0.3"
+    "robust-point-in-polygon": "^1.0.3",
+    "webpack": "^4.5.0"
   },
   "devDependencies": {
     "webpack-cli": "^2.0.15"
