@@ -62,7 +62,7 @@ var REGIONS_DATA = {
     },
     // Шаблон html-содержимого макета.
     optionsTemplate = [
-        '<div style="line-height: 34px; background-color: #80808080;" id="regions-params">',
+        '<div style="line-height: 34px; visibility: hidden; background-color: #80808080;" id="regions-params">',
         '{% for paramName, param in data.params %}',
         '{% for key, value in state.values %}',
         '{% if key == paramName %}',
@@ -212,7 +212,7 @@ function init() {
                             //contains = notAccurateRayCast(hotels.features[j].geometry.coordinates, res.features[i].geometry.coordinates[k]);
 
                             // Улучшенный, точный метод трассировки луча. (~270 ms при 100 000 итерациях) (~1 sec при 500 000 итерациях) (~2.2 sec при 1млн. итераций)
-                            contains = classifyPoint(res.features[i].geometry.coordinates[k], hotels.features[j].geometry.coordinates);
+                            contains = classifyPoint(res.features[i].geometry.coordinates[k], hotels.features[j].geometry.coordinates.reverse());
 
                             if (contains !== 1) {
                                 res.features[i].properties["pointsNumber"]++;
