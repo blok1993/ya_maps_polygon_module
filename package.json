@@ -3,6 +3,7 @@
   "version": "0.0.1",
   "private": true,
   "scripts": {
+    "test": "tape test.js",
     "build": "webpack"
   },
   "dependencies": {
@@ -11,6 +12,7 @@
     "webpack": "^4.5.0"
   },
   "devDependencies": {
-    "webpack-cli": "^2.0.15"
+    "webpack-cli": "^2.0.15",
+    "tape": "^2.0.0"
   }
 }
