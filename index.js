@@ -180,6 +180,8 @@ function init() {
                     map.geoObjects.remove(this.regions);
                 }
 
+                console.log(res.features);
+
                 // Создаем легенду
                 this._legendCreation();
 
@@ -202,8 +204,26 @@ function init() {
                         feature.options = {fillColor: "rgba(" + R + ", " + G + ", " + B + ", " + alpha + ")"};
 
                         feature.id = feature.properties.iso3166;
+
                         return feature;
                     }));
+
+                // Создание независимого экземпляра балуна
+                // и отображение его в центре конкретного полигона.
+                var objectManager = this.regions;
+
+                this.regions.events.add(['click'], function(e) {
+                    var objId = e.get('objectId');
+                    var object = objectManager.objects.getById(objId);
+
+                    var balloon = new ymaps.Balloon(map);
+                    balloon.options.setParent(map.options);
+
+                    var content = object.properties.name + '\n кол-во точек ' + object.properties.pointsNumber;
+
+                    balloon.setData({ content: content });
+                    balloon.open(object.geometry.coordinates[0][0]);
+                });
 
                 map.geoObjects.add(this.regions);
                 this.getMap().setBounds(
@@ -287,7 +307,6 @@ function init() {
                 }
 
                 console.log('big tests ' + (passed ? 'passed' : 'failed'));
-
 
                 // Логирование значений
                 console.log('Кол-во итераций ' + iterationsCount);
