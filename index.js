@@ -212,20 +212,43 @@ function init() {
                 // и отображение его в центре конкретного полигона.
                 var objectManager = this.regions;
 
-                this.regions.events.add(['click'], function(e) {
+                var balloon = new ymaps.Balloon(map);
+                balloon.options.setParent(map.options);
+                
+                var interactiveSettings = {
+                    mouseEnter: {
+                        fillOpacity: 0.5,
+                        strokeWidth: 2
+                    },
+                    mouseLeave: {
+                        fillOpacity: 1,
+                        strokeWidth: 1
+                    }
+                };
+
+                this.regions.events.add('click', function(e) {
                     var objId = e.get('objectId');
                     var object = objectManager.objects.getById(objId);
+                    var someHtml = object.properties.name + '<br> кол-во точек ' + object.properties.pointsNumber;
 
-                    var balloon = new ymaps.Balloon(map);
-                    balloon.options.setParent(map.options);
-
-                    var content = object.properties.name + '\n кол-во точек ' + object.properties.pointsNumber;
-
-                    balloon.setData({ content: content });
+                    balloon.setData({ content: someHtml });
                     balloon.open(object.geometry.coordinates[0][0]);
                 });
 
+                this.regions.events.add('mouseenter', function (e) {
+                    var objId = e.get('objectId');
+
+                    objectManager.objects.setObjectOptions(objId, interactiveSettings.mouseEnter);
+                });
+
+                this.regions.events.add('mouseleave', function (e) {
+                    var objId = e.get('objectId');
+
+                    objectManager.objects.setObjectOptions(objId, interactiveSettings.mouseLeave);
+                });
+
                 map.geoObjects.add(this.regions);
+
                 this.getMap().setBounds(
                     this.regions.getBounds(),
                     {checkZoomRange: true}
