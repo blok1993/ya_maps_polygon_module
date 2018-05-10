@@ -314,6 +314,9 @@ function init() {
 
                 var scriptTime = performance.now() - t0;
                 yaCounter48808478.reachGoal('algorithm', {time: scriptTime.toFixed(2)});
+                yaCounter48808478.userParams({
+                    algorithm: scriptTime.toFixed(2) + "ms"
+                });
 
 
                 // Тесты больших данных
